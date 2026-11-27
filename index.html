@@ -16,8 +16,9 @@ button,input,select,textarea{font:inherit;color:inherit}button{cursor:pointer}
 input,select,textarea{width:100%;min-width:0;background:var(--surface);border:2px solid var(--line);border-radius:16px;padding:11px 12px}
 .seg{display:flex;background:var(--sunk);border-radius:99px;padding:4px}.seg button{flex:1;border:0;background:none;border-radius:99px;padding:9px;font-weight:700}.seg .on{background:var(--surface);box-shadow:0 2px 8px #4632181a}
 .stage{position:relative;background:var(--surface);border-radius:28px;margin:12px 0;padding:14px 0 50px;box-shadow:0 6px 18px #46371e14}
-.body{display:block;height:min(58vh,470px);width:100%}.base{fill:#E9E4D8}
+.body{display:block;height:min(58vh,470px);width:100%}
 .mus{fill:#F7B8A6;stroke:#fff;stroke-width:1.2;cursor:pointer;transition:fill .15s}.mus:hover{fill:#F29C86}.mus.on{fill:#D9482F}
+.fib path{fill:none;stroke:#8C2F1F;stroke-opacity:.3;stroke-width:1;stroke-linecap:round;pointer-events:none}
 .tag{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);background:var(--primary);color:#fff;border-radius:99px;padding:6px 16px;font-weight:700;white-space:nowrap}
 .chips{display:flex;gap:8px;overflow-x:auto;padding:4px 0 8px;scrollbar-width:none}
 .chip{flex:none;border:2px solid var(--line);background:var(--surface);border-radius:99px;padding:7px 14px;font-weight:600;font-size:14px}.chip.on{background:var(--primary);border-color:var(--primary);color:#fff}
@@ -57,7 +58,7 @@ summary{cursor:pointer;color:var(--muted);margin:6px 0}
 .up{font-weight:700;font-size:14px;background:var(--mint);border-radius:12px;padding:6px 10px}
 </style></head><body>
 <main id="view"></main>
-<nav class="nav" aria-label="Seções"><button data-tab="mapa"><span>🧍</span>Mapa</button><button data-tab="lista"><span>🔎</span>Exercícios</button><button data-tab="treino"><span>🏋️</span>Treino<i id="badge"></i></button><button data-tab="planos"><span>🗓️</span>Planos</button><button data-tab="hist"><span>📈</span>Progresso</button></nav>
+<nav class="nav" aria-label="Seções"><button data-tab="mapa"><span>🦍</span>Mapa</button><button data-tab="lista"><span>🔎</span>Exercícios</button><button data-tab="treino"><span>🏋️</span>Treino<i id="badge"></i></button><button data-tab="planos"><span>🗓️</span>Planos</button><button data-tab="hist"><span>📈</span>Progresso</button></nav>
 <div id="sheet" hidden></div><div id="toast" role="status"></div>
 <script>
 // músculos
@@ -204,10 +205,11 @@ empurrafrente:["90,34 90,52 68,60 56,78 90,92 100,116 108,140 . . 80,116 70,140"
 };
 const POSES={};for(const k in MV)POSES[k]={a:P(MV[k][0].replace(/ \./g," ")),b:P(MV[k][1].replace(/ \./g," ")),x:MV[k][2]};
 const lerp=(a,b,t)=>a&&b?[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t]:(a||b);
-function figure(ex,t){
+function figure(ex,t,dir){
  const p=POSES[ex.mv]||POSES.agachamento;
  const n=Math.max(p.a.length,p.b.length),q=[];
  for(let i=0;i<n;i++)q[i]=lerp(p.a[i]||(i>8?p.a[i-4]:null),p.b[i]||(i>8?p.b[i-4]:null),t);
+ if(GOR[ex.id])return gorilla(ex,q,dir);
  const[h,s,e,w,hp,k,f,e2,w2,k2,f2]=q;
  const L=(pts,c,wd=9)=>`<polyline points="${pts.map(v=>v.join(",")).join(" ")}" fill="none" stroke="${c}" stroke-width="${wd}" stroke-linecap="round" stroke-linejoin="round"/>`;
  const R=(x,y,wd,hg)=>`<rect x="${x}" y="${y}" width="${wd}" height="${hg}" rx="4" fill="#E4DFD2"/>`;
@@ -234,17 +236,64 @@ function figure(ex,t){
  });
  return o;
 }
-// ---------- mapa do corpo ----------
-// metade esquerda desenhada; a direita é espelhada
-const BASE=`<ellipse cx="100" cy="30" rx="19" ry="23"/><path d="M90 48h20v18H90z"/><path d="M100 60C80 60 58 66 50 82C44 96 42 124 36 146L24 196C20 210 18 224 27 226C36 227 40 212 43 200L58 158L68 122L74 166C74 178 66 190 66 208C64 240 68 270 74 294C70 316 70 340 78 368L78 390C70 402 74 408 90 406L96 394L94 368C98 340 98 316 94 294L100 220L106 294C102 316 102 340 106 368L104 394L110 406C126 408 130 402 122 390L122 368C130 340 130 316 126 294C132 270 136 240 134 208C134 190 126 178 126 166L132 122L142 158L157 200C160 212 164 227 173 226C182 224 180 210 176 196L164 146C158 124 156 96 150 82C142 66 120 60 100 60Z"/>`;
-const FRONT={trapezio:"M90 56L90 66L72 70C80 66 86 62 90 56Z",ombros:"M71 71C58 72 50 82 49 104C58 102 66 92 74 76Z",peito:"M98 74L78 75C72 84 66 96 69 106C78 116 92 114 98 108Z",biceps:"M52 107C58 103 64 100 67 103C66 118 61 134 52 141C47 132 48 118 52 107Z",antebraco:"M48 145C54 143 58 146 57 154L42 196C38 200 31 197 31 192C34 176 40 156 48 145Z",abdomen:"M98 114L84 117C82 140 83 168 88 186L98 192Z",obliquos:"M80 116L71 113C73 132 77 150 76 166L84 180C79 158 79 136 80 116Z",quadriceps:"M75 188C70 204 66 220 70 246C72 266 76 280 82 288C92 282 92 262 90 240C88 220 84 202 75 188Z",adutores:"M83 190L98 208L95 246C92 250 92 244 92 236C90 216 88 204 83 190Z",panturrilha:"M77 304C73 318 74 336 80 356C86 344 86 318 77 304ZM90 306C94 318 93 332 89 346C87 332 87 316 90 306Z"};
-const BACK={trapezio:"M99 52L90 54C88 64 80 68 68 72C82 78 92 96 99 124Z",ombros:"M66 73C56 76 49 86 49 104C58 100 68 92 76 79Z",triceps:"M52 106C58 100 66 96 69 100C68 116 62 134 53 142C47 132 48 118 52 106Z",antebraco:"M48 145C54 143 58 146 57 154L42 196C38 200 31 197 31 192C34 176 40 156 48 145Z",dorsais:"M71 98C78 90 88 98 98 128L97 150C86 158 78 160 76 156C75 136 70 114 71 98Z",obliquos:"M76 161L84 160L84 178L74 180C76 174 77 168 76 161Z",lombar:"M98 153L87 161L87 180L98 184Z",gluteos:"M98 188C86 180 72 184 69 202C67 222 78 232 98 224Z",posterior:"M71 232C79 238 90 236 96 230C96 248 92 272 88 290L78 290C72 270 70 250 71 232Z",panturrilha:"M80 300C72 312 72 330 80 346C84 350 86 342 88 346C96 330 95 312 90 300C87 308 83 308 80 300Z"};
+// ---------- gorila: mapa anatômico (metade esquerda, espelhada) ----------
+const G={fur:"#8B8279",fur2:"#8B8279",line:"#6F675F",skin:"#8B8279",mus:"#F0735A",mus2:"#F9BCA9"};
+const sil=(shapes,c,w)=>{const p=shapes.replace(/ (fill|stroke|stroke-width)="[^"]*"/g,"");return `<g fill="${c}" stroke="${c}" stroke-width="${w}" stroke-linejoin="round">${p}</g><g fill="#fff">${p}</g>`};
+const MIR=s=>`<g>${s}</g><g transform="matrix(-1 0 0 1 240 0)">${s}</g>`;
+const HALF=`<path fill="${G.fur2}" d="M121 205L82 206C70 220 62 240 66 262C62 276 62 294 72 308L98 309C106 296 104 280 100 266C106 250 114 238 121 232Z"/>
+<path fill="${G.skin}" d="M73 303C62 308 50 316 49 324C48 332 58 332 62 328C66 334 76 334 80 329C86 333 98 332 101 323C103 314 100 308 97 303Z"/>
+<path fill="${G.fur}" d="M121 76C104 74 88 82 70 87C62 100 62 120 68 140C72 164 82 184 80 199C76 208 76 216 80 222L121 234Z"/>
+<path fill="${G.fur}" d="M76 87C52 88 36 102 34 124C26 144 28 160 28 172C14 188 11 212 15 232L19 248L40 252C46 234 58 210 56 188C66 172 70 152 68 138C80 122 86 100 76 87Z"/>
+<path fill="${G.skin}" d="M19 245C11 254 9 268 13 280C15 289 22 289 23 281C23 290 31 291 32 282C34 290 41 287 41 279C45 279 47 273 44 267C48 272 55 270 52 262L42 248Z"/>`;
+const HEAD=`<path fill="${G.fur}" d="M121 14C106 14 98 27 95 43C87 42 84 55 91 60C88 69 89 80 96 87C103 94 111 97 121 97Z"/>`;
+const FRONT={trapezio:"M101 85L102 96L77 95C87 92 95 90 101 85Z",ombros:"M72 91C53 93 41 106 39 129C54 127 68 115 77 97Z",peito:"M118 100L83 100C70 109 67 124 73 135C87 148 108 147 118 137Z",biceps:"M38 135C48 128 61 128 64 135C63 152 55 169 40 178C30 168 30 147 38 135Z",antebraco:"M31 182C42 176 53 183 51 196L38 243C32 248 23 245 21 239C15 219 18 196 31 182Z",abdomen:"M118 145L98 148C95 169 96 197 106 214L118 220Z",obliquos:"M93 147L74 142C76 162 83 181 82 198L101 213C92 195 90 169 93 147Z",quadriceps:"M80 214C69 229 68 248 74 261C80 270 91 269 95 261C99 245 94 228 80 214Z",adutores:"M98 219L117 232L101 258C97 245 98 232 98 219Z",panturrilha:"M73 272C65 283 68 297 76 306C84 297 85 283 73 272ZM91 274C99 282 98 295 91 304C86 294 86 283 91 274Z"};
+const BACK={trapezio:"M119 74C110 84 93 87 74 91C95 100 110 122 119 156Z",ombros:"M69 93C53 95 41 107 39 129C54 125 70 113 82 99Z",triceps:"M38 135C48 126 63 122 66 132C64 151 54 171 40 179C30 168 30 147 38 135Z",antebraco:FRONT.antebraco,dorsais:"M72 116C85 106 103 121 115 152L115 178C101 188 87 187 84 181C81 162 70 137 72 116Z",obliquos:"M83 188L97 189L98 206L81 207C83 201 84 195 83 188Z",lombar:"M118 182L101 189L101 210L118 214Z",gluteos:"M118 217C103 208 80 213 77 231C80 249 104 253 118 239Z",posterior:"M74 247C85 257 103 255 113 244C109 259 102 268 96 271L75 270C72 262 72 254 74 247Z",panturrilha:"M74 275C62 286 66 299 76 308C81 304 84 304 87 308C100 297 102 285 94 275C90 283 80 283 74 275Z"};
+// linhas de fibra
+const FIB={peito:"M115 108Q95 110 76 122M115 122Q96 124 80 134",ombros:"M68 98Q52 108 47 123",biceps:"M49 135Q51 154 41 170",triceps:"M52 133Q45 150 48 164",antebraco:"M40 188Q30 210 29 238M46 192L36 226",abdomen:"M117 162H99M117 179H99M117 197H103M108 149V212",obliquos:"M80 153L92 164M81 169L93 183M85 187L97 202",quadriceps:"M81 224Q88 243 84 262",trapezio:"M115 90Q103 100 93 99",dorsais:"M80 122Q101 140 111 170M80 143Q95 158 100 180",lombar:"M110 188V209",gluteos:"M83 232Q96 220 114 224",posterior:"M91 254L87 268",panturrilha:"M80 283V300"};
 function bodySVG(side,heat){
- const mp=side==="f"?FRONT:BACK;let g="";
- if(heat){for(const k in mp)g+=`<g style="fill:${heat(k)};stroke:#fff"><title>${M[k]}</title><path d="${mp[k]}"/><path d="${mp[k]}" transform="matrix(-1 0 0 1 200 0)"/></g>`;return `<svg viewBox="12 2 176 410" class="body" aria-label="Mapa de séries por músculo, ${side==="f"?"frente":"costas"}"><g class="base">${BASE}</g>${g}</svg>`}
- for(const k in mp){g+=`<g class="mus${state.mus===k?" on":""}" data-m="${k}" role="button" tabindex="0" aria-label="${M[k]}"><title>${M[k]}</title><path d="${mp[k]}"/><path d="${mp[k]}" transform="matrix(-1 0 0 1 200 0)"/></g>`}
- return `<svg viewBox="12 2 176 410" class="body" aria-label="Corpo visto de ${side==="f"?"frente":"costas"}"><g class="base">${BASE}</g>${g}</svg>`;
+ const front=side==="f",mp=front?FRONT:BACK;let g="";
+ for(const k in mp){const paths=MIR(`<path d="${mp[k]}"/>`),fib=FIB[k]&&!(front&&k==="trapezio")&&!(front&&k==="panturrilha")?`<g class="fib">${MIR(`<path d="${FIB[k]}"/>`)}</g>`:"";
+  g+=heat?`<g style="fill:${heat(k)};stroke:#fff;stroke-width:1.2"><title>${M[k]}</title>${paths}${fib}</g>`:`<g class="mus${state.mus===k?" on":""}" data-m="${k}" role="button" tabindex="0" aria-label="${M[k]}"><title>${M[k]}</title>${paths}${fib}</g>`}
+ const label=heat?"Mapa de séries por músculo":"Gorila";
+ return `<svg viewBox="4 2 232 338" class="body" aria-label="${label}, ${front?"frente":"costas"}"><ellipse cx="120" cy="330" rx="90" ry="7" fill="#EFEBE1"/>${sil(MIR(HALF)+MIR(HEAD),G.line,3.6)}${g}</svg>`;
 }
+// ---------- gorila: animação com volume ----------
+const GOR={flexao:{face:-1,mark:1},agach:{face:1,mark:4},rosca:{face:1,mark:3}};
+function capsule(a,b,r1,r2,fill){const dx=b[0]-a[0],dy=b[1]-a[1],d=Math.hypot(dx,dy)||.01,an=Math.atan2(dy,dx),o=Math.acos(Math.max(-1,Math.min(1,(r1-r2)/d)));
+ const pt=(c,r,t)=>`${(c[0]+r*Math.cos(t)).toFixed(1)},${(c[1]+r*Math.sin(t)).toFixed(1)}`;
+ return `<path fill="${fill}" d="M${pt(a,r1,an+o)}A${r1} ${r1} 0 ${o<Math.PI/2?1:0} 1 ${pt(a,r1,an-o)}L${pt(b,r2,an-o)}A${r2} ${r2} 0 ${o>Math.PI/2?1:0} 1 ${pt(b,r2,an+o)}Z"/>`}
+// destaque de músculo sobre um segmento; off>0 = lado da frente
+function patch(a,b,t,off,rx,ry,fill,face){const dx=b[0]-a[0],dy=b[1]-a[1],d=Math.hypot(dx,dy)||1;let nx=-dy/d,ny=dx/d;
+ // normal apontando para a frente do corpo (segmento orientado de cima para baixo)
+ nx*=-face;ny*=-face;const x=a[0]+dx*t+nx*off,y=a[1]+dy*t+ny*off;
+ return `<ellipse cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" rx="${rx}" ry="${ry}" fill="${fill}" stroke="#fff" stroke-width=".8" transform="rotate(${(Math.atan2(dy,dx)*180/Math.PI).toFixed(1)} ${x.toFixed(1)} ${y.toFixed(1)})"/>`}
+function gorilla(ex,q,dir){
+ const cfg=GOR[ex.id],F=cfg.face,[h,s,e,w,hp,k,f]=q,shift=(p,x,y)=>[p[0]+x,p[1]+y];
+ let o=`<line x1="10" y1="147" x2="190" y2="147" stroke="#E4DFD2" stroke-width="4" stroke-linecap="round"/>`;
+ const foot=(p,c)=>capsule(shift(p,-3,1),shift(p,ex.id==="flexao"?-8:12,3),5,3.6,c);
+ const hand=(p,c)=>ex.id==="flexao"?capsule(shift(p,1,1),shift(p,-11,3),5,3.6,c):`<circle cx="${p[0]}" cy="${p[1]}" r="5.8" fill="${c}"/>`;
+ // membros do outro lado
+ const d=ex.id==="flexao"?[6,-3]:[-7,-2],far=p=>shift(p,...d);
+ o+=sil(capsule(far(hp),far(k),10,7,G.line)+capsule(far(k),far(f),7,4.5,G.line)+foot(far(f),G.line)+capsule(far(s),far(e),8,6,G.line)+capsule(far(e),far(w),7,4.5,G.line)+hand(far(w),G.line),"#BDB6AC",2.6);
+ // perna, tronco e cabeça
+ const body=capsule(hp,k,12,8,G.fur)+capsule(k,f,8,5,G.fur)+foot(f,G.skin)+capsule(s,hp,17,12,G.fur);
+ let ux=h[0]-s[0],uy=h[1]-s[1];const L=Math.hypot(ux,uy)||1;ux/=L;uy/=L;const ang=Math.atan2(ux,-uy)*180/Math.PI;
+ o+=sil(body+capsule(s,h,12,9,G.fur)+`<g transform="translate(${h[0]} ${h[1]}) rotate(${ang.toFixed(1)}) scale(${F} 1)" fill="${G.fur}"><path d="M-12 3C-14-8-8-17 0-16C8-15 12-10 13-5C19-2 19 8 13 11C5 14-10 12-12 3Z"/></g>`,G.line,2.8);
+ if(ex.id==="flexao")o+=patch(s,hp,.17,10,12,6.5,G.mus,F);
+ if(ex.id==="agach")o+=patch(hp,k,.55,5,15,6,G.mus,F)+patch(s,hp,.93,-6,10,7.5,G.mus,F);
+ // braço da frente
+ o+=sil(capsule(s,e,10.5,7.5,G.fur)+capsule(e,w,8.5,5,G.fur)+hand(w,G.skin),G.line,2.8);
+ if(ex.id==="flexao")o+=patch(s,e,.5,-4,10,4.5,G.mus,F);
+ if(ex.id==="rosca")o+=patch(s,e,.55,4,11,5,G.mus,F)+patch(e,w,.38,2,9,3.8,G.mus2,F);
+ if(ex.eq==="barra")o+=`<circle cx="${w[0]}" cy="${w[1]}" r="12" fill="none" stroke="#25241F" stroke-width="3.5"/><circle cx="${w[0]}" cy="${w[1]}" r="2.4" fill="#fff"/>`;
+ // seta de direção
+ if(dir){const m=cfg.mark,x={flexao:112,agach:48,rosca:150}[ex.id],y={flexao:70,agach:94,rosca:76}[ex.id],up=ex.id==="rosca"?dir>0:dir<0;
+  o+=`<g transform="translate(${x} ${y}) scale(1 ${up?1:-1})" stroke="#2F5D50" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M0 14V-12M-8-4L0-13L8-4"/></g>`}
+ return o;
+}
+// ciclo com pausa no início e no fim
+function phase(ms){const c=ms%3600,ease=u=>(1-Math.cos(u*Math.PI))/2;
+ if(c<500)return[0,0];if(c<1800)return[ease((c-500)/1300),1];if(c<2300)return[1,0];return[1-ease((c-2300)/1300),-1]}
 // ---------- estado ----------
 const KEY="mapamuscular.v1";
 const state={tab:"mapa",side:"f",mus:null,eq:[],fav:false,sec2:false,lv:0,q:"",open:null,sec:60,confirm:"",goal:"hip",days:3,mins:40,maxlv:2,gear:["corpo"],heat:"f",age:25,prio:"eq",split:0,targets:[],wiz:null,how:""};
@@ -425,12 +474,12 @@ function openEx(id){
  $("#sheet").innerHTML=`<div class="panel" role="dialog" aria-modal="true" aria-label="${x.n}"><div class="row between"><button class="chip" data-act="close">← Voltar</button><button class="chip${fav?" on":""}" data-fav="${id}">${fav?"★ Favorito":"☆ Favoritar"}</button></div>
  <h2>${x.n}</h2><p class="muted">${M[x.m]}${x.sec.length?" · ajuda: "+x.sec.map(s=>M[s].toLowerCase()).join(", "):""}<br>${EQ[x.eq]} · ${LV[x.lv]}</p>
  <div class="anim"><svg viewBox="0 0 200 155" id="fig" aria-label="Animação esquemática do movimento">${figure(x,paused?1:0)}</svg><button class="chip" data-act="pause" id="pz">${paused?"▶ Animar":"⏸ Pausar"}</button></div>
- <p class="note">Desenho esquemático. Siga o passo a passo.</p><ol>${x.steps.map(s=>`<li>${s}</li>`).join("")}</ol><div class="block cream"><b>Atenção</b><p>${x.tip}</p></div>
+ <p class="note">${GOR[id]?"Em coral, os músculos trabalhados. Siga o passo a passo.":"Desenho esquemático. Siga o passo a passo."}</p><ol>${x.steps.map(s=>`<li>${s}</li>`).join("")}</ol><div class="block cream"><b>Atenção</b><p>${x.tip}</p></div>
  ${evo}<button class="btn" data-add="${id}">${inPlan?"Já está no treino ✓":"Adicionar ao treino"}</button>
  <a class="btn ghost" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=${encodeURIComponent("como fazer "+x.n)}">Buscar vídeos no YouTube (usa internet)</a></div>`;
  $("#sheet").hidden=false;document.body.style.overflow="hidden";$("#sheet [data-act=close]").focus();
  cancelAnimationFrame(raf);let t0=null,acc=0;
- const tick=ts=>{if(t0!==null&&!paused){acc+=ts-t0;const f=$("#fig");if(f)f.innerHTML=figure(x,(1-Math.cos(acc/2400*Math.PI*2))/2)}t0=ts;raf=requestAnimationFrame(tick)};raf=requestAnimationFrame(tick);
+ const tick=ts=>{if(t0!==null&&!paused){acc+=ts-t0;const f=$("#fig");if(f){if(GOR[x.id]){const[t,d]=phase(acc);f.innerHTML=figure(x,t,d)}else f.innerHTML=figure(x,(1-Math.cos(acc/2400*Math.PI*2))/2)}}t0=ts;raf=requestAnimationFrame(tick)};raf=requestAnimationFrame(tick);
 }
 function closeEx(){state.open=null;$("#sheet").hidden=true;document.body.style.overflow="";cancelAnimationFrame(raf);render();if(lastFocus&&lastFocus.isConnected)lastFocus.focus()}
 // ---------- cronômetro ----------
